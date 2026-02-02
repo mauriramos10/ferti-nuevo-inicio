@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b5ed7" />
+  <title>Ferti · Mantenimiento Móvil</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icon-192.png" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__title">
+      <div class="logo">FM</div>
+      <div>
+        <div class="h1">Ferti · Mantenimiento Móvil</div>
+        <div class="sub">Asignaciones · Turnos · Tareas (offline con almacenamiento local)</div>
+      </div>
+    </div>
+    <div class="topbar__actions">
+      <button class="btn btn--ghost" id="btnExport">Exportar</button>
+      <button class="btn btn--ghost" id="btnImport">Importar</button>
+      <input id="fileImport" type="file" accept="application/json" hidden />
+      <button class="btn btn--primary" id="btnReset">Restablecer</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="card__header">
+        <h2>Personal</h2>
+        <div class="row row--wrap gap">
+          <div class="seg">
+            <button class="seg__btn is-active" data-shift="todos" id="shiftTodos">Todos</button>
+            <button class="seg__btn" data-shift="dia" id="shiftDia">Día</button>
+            <button class="seg__btn" data-shift="noche" id="shiftNoche">Noche</button>
+          </div>
+          <input class="input" id="searchStaff" placeholder="Buscar por nombre, ficha o especialidad…" />
+          <button class="btn" id="btnAddStaff">+ Agregar</button>
+        </div>
+      </div>
+
+      <div class="tableWrap">
+        <table class="table" id="staffTable">
+          <thead>
+            <tr>
+              <th>Ficha</th>
+              <th>Nombre</th>
+              <th>Especialidad</th>
+              <th>Teléfono</th>
+              <th>Turno</th>
+              <th>Unidad móvil</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="staffTbody"></tbody>
+        </table>
+      </div>
+      <div class="hint">Tip: toca una fila para editar rápido.</div>
+    </section>
+
+    <section class="grid">
+      <section class="card">
+        <div class="card__header">
+          <h2>Unidades móviles</h2>
+          <div class="row gap">
+            <button class="btn" id="btnAddVehicle">+ Agregar</button>
+          </div>
+        </div>
+        <div class="tableWrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Equipo</th>
+                <th>Denominación</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="vehiclesTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__header">
+          <h2>Tareas</h2>
+          <div class="row row--wrap gap">
+            <select class="input" id="taskFilterPerson">
+              <option value="">Todas las personas</option>
+            </select>
+            <select class="input" id="taskFilterVehicle">
+              <option value="">Todas las unidades</option>
+            </select>
+            <select class="input" id="taskFilterStatus">
+              <option value="abiertas">Abiertas</option>
+              <option value="todas">Todas</option>
+              <option value="cerradas">Cerradas</option>
+            </select>
+            <button class="btn btn--primary" id="btnAddTask">+ Nueva tarea</button>
+          </div>
+        </div>
+
+        <div class="tasks" id="tasksList"></div>
+      </section>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal" id="modal" aria-hidden="true">
+    <div class="modal__backdrop" id="modalBackdrop"></div>
+    <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal__header">
+        <h3 id="modalTitle">Editar</h3>
+        <button class="btn btn--ghost" id="modalClose">Cerrar</button>
+      </div>
+      <div class="modal__body" id="modalBody"></div>
+      <div class="modal__footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
