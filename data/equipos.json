@@ -1,0 +1,26 @@
+{
+  "equipos": [
+    {
+      "id": "eq_exatas",
+      "nombre": "Exatas",
+      "stock_taller": 0,
+      "sistemas": [
+        {
+          "id": "sis_chasis",
+          "nombre": "Chasis",
+          "componentes": []
+        },
+        {
+          "id": "sis_potencia",
+          "nombre": "Sistema de potencia",
+          "componentes": []
+        },
+        {
+          "id": "sis_hidraulico",
+          "nombre": "Hidráulico",
+          "componentes": []
+        }
+      ]
+    }
+  ]
+}
