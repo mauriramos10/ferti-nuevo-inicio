@@ -27,7 +27,11 @@ export function renderTree(data, openSet, selected){
         ${systems.map(sis => {
           const sisKey = `sis:${eq.id}:${sis.id}`;
           const sisOpen = openSet.has(sisKey);
-          const sisSelected = selected?.type==="sistema" && selected?.equipoId===eq.id && selected?.sistemaId===sis.id;
+          const sisSelected =
+            selected?.type==="sistema" &&
+            selected?.equipoId===eq.id &&
+            selected?.sistemaId===sis.id;
+
           const comps = sis.componentes || [];
 
           const sisRow = `
@@ -60,11 +64,8 @@ export function renderTree(data, openSet, selected){
 }
 
 export function bindTreeEvents(container, actions){
-  // ✅ Evita que se agregue el listener más de una vez (se duplicaba con cada render)
-  if (container.dataset.bound === "1") return;
-  container.dataset.bound = "1";
-
-  container.addEventListener("click", (e)=>{
+  // ✅ Nunca duplica eventos: se reemplaza el handler cada render
+  container.onclick = (e) => {
     const twist = e.target.closest("[data-twist]");
     if(twist){
       actions.toggleOpen(twist.getAttribute("data-twist"));
@@ -85,5 +86,5 @@ export function bindTreeEvents(container, actions){
         sistemaId: node.getAttribute("data-sid")
       });
     }
-  });
+  };
 }
