@@ -153,7 +153,7 @@ function render() {
 }
 
 function setupAdminButton(){
-  const btn = document.getElementById("adminBtn");
+  const btn = document.querySelector(".admin-btn");
   btn.addEventListener("click", ()=>{
     // Fase A: contraseña simple local (luego se cambia a backend)
     const pass = prompt("Contraseña Admin:");
