@@ -17,7 +17,7 @@ export function renderTree(data, openSet, selected){
       <div class="node ${eqSelected ? "selected":""}" data-kind="equipo" data-eqid="${esc(eq.id)}">
         <div class="twisty" data-twist="${esc(eqKey)}">${eqOpen ? "▼":"▶"}</div>
         <div>${esc(eq.nombre)}</div>
-        <div class="badge">Taller: ${Number.isInteger(eq.stock_taller)?eq.stock_taller:0}</div>
+        <div class="badge">Taller: ${Number.isInteger(eq.stock_taller) ? eq.stock_taller : 0}</div>
       </div>
     `;
 
@@ -48,7 +48,7 @@ export function renderTree(data, openSet, selected){
                 <div class="node" style="cursor:default">
                   <div class="twisty"></div>
                   <div>[${esc(c.codigo_sap)}] ${esc(c.nombre)}</div>
-                  <div class="badge">Stock: ${Number.isInteger(c.stock)?c.stock:0}</div>
+                  <div class="badge">Stock: ${Number.isInteger(c.stock) ? c.stock : 0}</div>
                 </div>
               `).join("")}
             </div>
@@ -77,11 +77,15 @@ export function bindTreeEvents(container, actions){
 
     const kind = node.getAttribute("data-kind");
     if(kind === "equipo"){
-      actions.setSelected({ type:"equipo", equipoId: node.getAttribute("data-eqid") });
+      actions.setSelected({
+        type: "equipo",
+        equipoId: node.getAttribute("data-eqid")
+      });
     }
+
     if(kind === "sistema"){
       actions.setSelected({
-        type:"sistema",
+        type: "sistema",
         equipoId: node.getAttribute("data-eqid"),
         sistemaId: node.getAttribute("data-sid")
       });
