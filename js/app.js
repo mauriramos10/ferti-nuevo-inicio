@@ -8,7 +8,8 @@ let state = {
   data: null,
   open: new Set(),
   selected: null,
-  isAdmin: false
+  isAdmin: false,
+  dirty: false
 };
 
 function showFatal(err){
@@ -73,6 +74,36 @@ function findSistema(equipoId, sistemaId){
   return (eq.sistemas || []).find(s => s.id === sistemaId);
 }
 
+function renderSaveBar(){
+  if(!state.isAdmin) return "";
+  const label = state.dirty ? "💾 Guardar cambios" : "✅ Sin cambios";
+  const disabled = state.dirty ? "" : "disabled";
+  return `
+    <div style="display:flex;gap:10px;align-items:center;margin:10px 0;">
+      <button id="btnSave" ${disabled}>${label}</button>
+      ${state.dirty ? `<span style="color:#b45309;">Cambios pendientes…</span>` : ``}
+    </div>
+  `;
+}
+
+async function handleSave(){
+  const r = await saveNow(state.data);
+  if(r.ok){
+    state.dirty = false;
+    alert("✅ Guardado en GitHub");
+    render();
+    return;
+  }
+  if(r.error !== "cancelled"){
+    alert("❌ No se pudo guardar.\n" + (r.detail || r.error));
+  }
+}
+
+function wireSaveButton(){
+  if(!state.isAdmin) return;
+  document.getElementById("btnSave")?.addEventListener("click", handleSave);
+}
+
 function renderRightPanel() {
   const content = document.getElementById("content");
   const breadcrumb = document.getElementById("breadcrumb");
@@ -80,16 +111,22 @@ function renderRightPanel() {
   const actions = adminActions({
     getState: ()=>state,
     setState: (next)=>{ state = next; },
-    render
+    render,
+    markDirty: (v)=>{ state.dirty = v; }
   });
 
+  // Vista por defecto
   if (!state.selected) {
     breadcrumb.textContent = "Equipos";
     content.innerHTML = `
+      ${renderSaveBar()}
       <h2>Equipos</h2>
       <p>Selecciona un equipo o un sistema en el panel izquierdo.</p>
       ${state.isAdmin ? `<button id="btnAddEquipo">+ Agregar equipo</button>` : ``}
     `;
+
+    wireSaveButton();
+
     if(state.isAdmin){
       document.getElementById("btnAddEquipo")?.addEventListener("click", actions.addEquipo);
     }
@@ -99,9 +136,11 @@ function renderRightPanel() {
   const { type, equipoId, sistemaId } = state.selected;
   const eq = findEquipo(equipoId);
 
+  // Vista de EQUIPO
   if (type === "equipo") {
     breadcrumb.textContent = `Equipos / ${eq?.nombre ?? ""}`;
     content.innerHTML = `
+      ${renderSaveBar()}
       <h2>${eq?.nombre ?? ""}</h2>
       <p><b>Stock en taller:</b> ${Number.isInteger(eq?.stock_taller) ? eq.stock_taller : 0}</p>
 
@@ -115,6 +154,8 @@ function renderRightPanel() {
       ` : `<p>Selecciona un sistema para ver componentes.</p>`}
     `;
 
+    wireSaveButton();
+
     if(state.isAdmin){
       document.getElementById("btnAddEquipo")?.addEventListener("click", actions.addEquipo);
       document.getElementById("btnEditEquipo")?.addEventListener("click", ()=>actions.editEquipo(equipoId));
@@ -124,6 +165,7 @@ function renderRightPanel() {
     return;
   }
 
+  // Vista de SISTEMA
   const sis = findSistema(equipoId, sistemaId);
   breadcrumb.textContent = `Equipos / ${eq?.nombre ?? ""} / ${sis?.nombre ?? ""}`;
 
@@ -157,6 +199,7 @@ function renderRightPanel() {
   `;
 
   content.innerHTML = `
+    ${renderSaveBar()}
     <h2>${sis?.nombre ?? ""}</h2>
 
     ${state.isAdmin ? `
@@ -170,11 +213,14 @@ function renderRightPanel() {
     ${rows.length ? table : "<p>No hay componentes aún.</p>"}
   `;
 
+  wireSaveButton();
+
   if(state.isAdmin){
     document.getElementById("btnEditSistema")?.addEventListener("click", ()=>actions.editSistema(equipoId, sistemaId));
     document.getElementById("btnDelSistema")?.addEventListener("click", ()=>actions.deleteSistema(equipoId, sistemaId));
     document.getElementById("btnAddComp")?.addEventListener("click", ()=>actions.addComponente(equipoId, sistemaId));
 
+    // Acciones por fila
     document.querySelectorAll("[data-edit]").forEach(b=>{
       b.addEventListener("click", ()=>actions.editComponente(equipoId, sistemaId, b.getAttribute("data-edit")));
     });
@@ -199,6 +245,7 @@ function setupAdminButton(){
     const pass = prompt("Contraseña Admin (para entrar al modo admin):");
     if(pass === null) return;
 
+    // ✅ este es solo para entrar a modo admin en la UI
     if(pass.trim() === "1234"){
       state.isAdmin = true;
       alert("Modo Admin ACTIVADO");
