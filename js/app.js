@@ -1,19 +1,56 @@
 import { renderTree, bindTreeEvents } from "./ui.js";
 import { adminActions } from "./admin.js";
 
+const API_URL = "https://throbbing-mouse-337ferti-backend.mauriramos10.workers.dev";
+const FALLBACK_LOCAL = "./data/equipos.json";
+
 let state = {
   data: null,
   open: new Set(),
-  selected: null,   // {type: "equipo"|"sistema", equipoId, sistemaId}
+  selected: null,
   isAdmin: false
 };
 
-// ✅ IMPORTANTE: ruta correcta para GitHub Pages
-const API_URL = "https://throbbing-mouse-337ferti-backend.mauriramos10.workers.dev";
+function showFatal(err){
+  const content = document.getElementById("content");
+  const breadcrumb = document.getElementById("breadcrumb");
+  if (breadcrumb) breadcrumb.textContent = "Error";
+  if (content){
+    content.innerHTML = `
+      <h2>❌ Error cargando la app</h2>
+      <pre style="white-space:pre-wrap;background:#fff;padding:12px;border-radius:12px;border:1px solid #e6ebf2;">
+${String(err?.stack || err)}
+      </pre>
+      <p>Abre F12 → Console para ver más detalles.</p>
+    `;
+  }
+  console.error(err);
+}
+
+async function fetchJson(url){
+  const res = await fetch(url, { cache: "no-store" });
+  if(!res.ok){
+    throw new Error(`HTTP ${res.status} al pedir: ${url}`);
+  }
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error(`Respuesta no es JSON válido desde ${url}.\n\n${text.slice(0,200)}...`);
+  }
+}
 
 async function loadData() {
-  const res = await fetch(API_URL, { cache: "no-store" });
-  state.data = await res.json();
+  // 1) intenta Worker
+  try {
+    state.data = await fetchJson(API_URL);
+    return;
+  } catch (e) {
+    console.warn("Falló Worker, intento local:", e);
+  }
+
+  // 2) fallback local
+  state.data = await fetchJson(FALLBACK_LOCAL);
 }
 
 function setSelected(sel) {
@@ -28,7 +65,7 @@ function toggleOpen(key) {
 }
 
 function findEquipo(equipoId){
-  return (state.data.equipos || []).find(e => e.id === equipoId);
+  return (state.data?.equipos || []).find(e => e.id === equipoId);
 }
 function findSistema(equipoId, sistemaId){
   const eq = findEquipo(equipoId);
@@ -46,7 +83,6 @@ function renderRightPanel() {
     render
   });
 
-  // Vista por defecto (sin selección)
   if (!state.selected) {
     breadcrumb.textContent = "Equipos";
     content.innerHTML = `
@@ -63,7 +99,6 @@ function renderRightPanel() {
   const { type, equipoId, sistemaId } = state.selected;
   const eq = findEquipo(equipoId);
 
-  // Vista de EQUIPO
   if (type === "equipo") {
     breadcrumb.textContent = `Equipos / ${eq?.nombre ?? ""}`;
     content.innerHTML = `
@@ -89,7 +124,6 @@ function renderRightPanel() {
     return;
   }
 
-  // Vista de SISTEMA
   const sis = findSistema(equipoId, sistemaId);
   breadcrumb.textContent = `Equipos / ${eq?.nombre ?? ""} / ${sis?.nombre ?? ""}`;
 
@@ -141,7 +175,6 @@ function renderRightPanel() {
     document.getElementById("btnDelSistema")?.addEventListener("click", ()=>actions.deleteSistema(equipoId, sistemaId));
     document.getElementById("btnAddComp")?.addEventListener("click", ()=>actions.addComponente(equipoId, sistemaId));
 
-    // Acciones por fila
     document.querySelectorAll("[data-edit]").forEach(b=>{
       b.addEventListener("click", ()=>actions.editComponente(equipoId, sistemaId, b.getAttribute("data-edit")));
     });
@@ -160,13 +193,10 @@ function render() {
 
 function setupAdminButton(){
   const btn = document.getElementById("adminBtn") || document.querySelector(".admin-btn");
-  if(!btn){
-    console.error("No encontré el botón de Modo Admin");
-    return;
-  }
+  if(!btn) return;
 
   btn.onclick = () => {
-    const pass = prompt("Contraseña Admin:");
+    const pass = prompt("Contraseña Admin (para entrar al modo admin):");
     if(pass === null) return;
 
     if(pass.trim() === "1234"){
@@ -180,11 +210,14 @@ function setupAdminButton(){
 }
 
 async function main() {
-  await loadData();
-  const first = state.data.equipos?.[0];
-  if (first) state.open.add(`eq:${first.id}`);
   setupAdminButton();
+
+  await loadData();
+
+  const first = state.data?.equipos?.[0];
+  if (first) state.open.add(`eq:${first.id}`);
+
   render();
 }
 
-main();
+main().catch(showFatal);
