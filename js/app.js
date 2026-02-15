@@ -87,21 +87,33 @@ function renderSaveBar(){
 }
 
 async function handleSave(){
-  const r = await saveNow(state.data);
-  if(r.ok){
-    state.dirty = false;
-    alert("✅ Guardado en GitHub");
-    render();
-    return;
-  }
-  if(r.error !== "cancelled"){
-    alert("❌ No se pudo guardar.\n" + (r.detail || r.error));
+  try{
+    alert("Intentando guardar..."); // ✅ si no sale este alert, el botón NO está haciendo click
+    const r = await saveNow(state.data);
+
+    if(r.ok){
+      state.dirty = false;
+      alert("✅ Guardado en GitHub");
+      render();
+      return;
+    }
+
+    if(r.error !== "cancelled"){
+      alert("❌ No se pudo guardar.\n" + (r.detail || r.error));
+    }
+  }catch(err){
+    alert("❌ Error ejecutando guardar: " + (err?.message || err));
+    console.error(err);
   }
 }
 
 function wireSaveButton(){
   if(!state.isAdmin) return;
-  document.getElementById("btnSave")?.addEventListener("click", handleSave);
+  const btn = document.getElementById("btnSave");
+  if(!btn) return;
+
+  // ✅ usando onclick evita duplicaciones y asegura que siempre quede 1 handler
+  btn.onclick = handleSave;
 }
 
 function renderRightPanel() {
