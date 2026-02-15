@@ -1,24 +1,21 @@
 {
   "equipos": [
     {
-      "id": "eq_exatas",
-      "nombre": "Exatas",
-      "stock_taller": 0,
+      "id": "eq_exata",
+      "nombre": "Exata",
+      "stock_taller": 2,
       "sistemas": [
-        {
-          "id": "sis_chasis",
-          "nombre": "Chasis",
-          "componentes": []
-        },
         {
           "id": "sis_potencia",
           "nombre": "Sistema de potencia",
-          "componentes": []
-        },
-        {
-          "id": "sis_hidraulico",
-          "nombre": "Hidráulico",
-          "componentes": []
+          "componentes": [
+            {
+              "id": "comp_1",
+              "codigo_sap": "3116180000164",
+              "nombre": "Filtro hidr\u00e1ulico",
+              "stock": 5
+            }
+          ]
         }
       ]
     }
