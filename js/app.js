@@ -6,7 +6,7 @@ let state = {
 };
 
 async function loadData() {
-  const res = await fetch("../data/equipos.json", { cache: "no-store" });
+  const res = await fetch("./data/equipos.json", { cache: "no-store" });
   state.data = await res.json();
 }
 
