@@ -44,7 +44,7 @@ function renderRightPanel() {
     render
   });
 
-  // Vista por defecto
+  // Vista por defecto (sin selección)
   if (!state.selected) {
     breadcrumb.textContent = "Equipos";
     content.innerHTML = `
@@ -61,6 +61,7 @@ function renderRightPanel() {
   const { type, equipoId, sistemaId } = state.selected;
   const eq = findEquipo(equipoId);
 
+  // Vista de EQUIPO
   if (type === "equipo") {
     breadcrumb.textContent = `Equipos / ${eq?.nombre ?? ""}`;
     content.innerHTML = `
@@ -69,6 +70,7 @@ function renderRightPanel() {
 
       ${state.isAdmin ? `
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;">
+          <button id="btnAddEquipo">+ Agregar equipo</button>
           <button id="btnEditEquipo">✏ Editar equipo</button>
           <button id="btnDelEquipo">🗑 Eliminar equipo</button>
           <button id="btnAddSistema">+ Agregar sistema</button>
@@ -77,6 +79,7 @@ function renderRightPanel() {
     `;
 
     if(state.isAdmin){
+      document.getElementById("btnAddEquipo")?.addEventListener("click", actions.addEquipo);
       document.getElementById("btnEditEquipo")?.addEventListener("click", ()=>actions.editEquipo(equipoId));
       document.getElementById("btnDelEquipo")?.addEventListener("click", ()=>actions.deleteEquipo(equipoId));
       document.getElementById("btnAddSistema")?.addEventListener("click", ()=>actions.addSistema(equipoId));
@@ -84,6 +87,7 @@ function renderRightPanel() {
     return;
   }
 
+  // Vista de SISTEMA
   const sis = findSistema(equipoId, sistemaId);
   breadcrumb.textContent = `Equipos / ${eq?.nombre ?? ""} / ${sis?.nombre ?? ""}`;
 
@@ -155,7 +159,6 @@ function render() {
 function setupAdminButton(){
   const btn = document.querySelector(".admin-btn");
   btn.addEventListener("click", ()=>{
-    // Fase A: contraseña simple local (luego se cambia a backend)
     const pass = prompt("Contraseña Admin:");
     if(pass === null) return;
 
@@ -171,7 +174,6 @@ function setupAdminButton(){
 
 async function main() {
   await loadData();
-  // abrir el primer equipo por defecto
   const first = state.data.equipos?.[0];
   if (first) state.open.add(`eq:${first.id}`);
   setupAdminButton();
