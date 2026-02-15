@@ -1,5 +1,5 @@
 import { renderTree, bindTreeEvents } from "./ui.js";
-import { adminActions } from "./admin.js";
+import { adminActions, saveNow } from "./admin.js";
 
 const API_URL = "https://throbbing-mouse-337ferti-backend.mauriramos10.workers.dev";
 const FALLBACK_LOCAL = "./data/equipos.json";
