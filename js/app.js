@@ -161,24 +161,23 @@ function render() {
 function setupAdminButton(){
   const btn = document.getElementById("adminBtn") || document.querySelector(".admin-btn");
   if(!btn){
-    console.error("No encontré el botón de Modo Admin (adminBtn / .admin-btn)");
+    console.error("No encontré el botón de Modo Admin");
     return;
   }
 
-  btn.addEventListener("click", ()=>{
+  btn.onclick = () => {
     const pass = prompt("Contraseña Admin:");
     if(pass === null) return;
 
     if(pass.trim() === "1234"){
       state.isAdmin = true;
-      alert("Modo Admin ACTIVADO (fase A/B)");
+      alert("Modo Admin ACTIVADO");
       render();
     }else{
       alert("Contraseña incorrecta");
     }
-  });
+  };
 }
-
 
 async function main() {
   await loadData();
