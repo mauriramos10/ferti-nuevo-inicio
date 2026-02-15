@@ -1,4 +1,9 @@
-function esc(s){ return String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+function esc(s){
+  return String(s ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
 
 export function renderTree(data, openSet, selected){
   if(!data) return "";
@@ -55,12 +60,17 @@ export function renderTree(data, openSet, selected){
 }
 
 export function bindTreeEvents(container, actions){
+  // ✅ Evita que se agregue el listener más de una vez (se duplicaba con cada render)
+  if (container.dataset.bound === "1") return;
+  container.dataset.bound = "1";
+
   container.addEventListener("click", (e)=>{
     const twist = e.target.closest("[data-twist]");
     if(twist){
       actions.toggleOpen(twist.getAttribute("data-twist"));
       return;
     }
+
     const node = e.target.closest(".node");
     if(!node) return;
 
