@@ -1,9 +1,9 @@
 // =======================
 // CONFIG
 // =======================
-const API_URL = "https://throbbing-mouse-337ferti-backend.mauriramos10.workers.dev";
+export const API_URL = "https://throbbing-mouse-337ferti-backend.mauriramos10.workers.dev";
 
-// Guardamos la contraseña en memoria (solo en esta sesión del navegador)
+// cache de contraseña en esta sesión (no se guarda en disco)
 let ADMIN_PASS_CACHE = "";
 
 // =======================
@@ -39,13 +39,13 @@ function deepClone(obj){
   return JSON.parse(JSON.stringify(obj));
 }
 
-async function saveToServer(data){
-  // Pide contraseña si no hay cache
+export async function saveNow(data){
+  // pide contraseña si no hay cache
   if(!ADMIN_PASS_CACHE){
     const pass = prompt("Contraseña Admin (para guardar en GitHub):");
-    if(pass === null) return false;
+    if(pass === null) return { ok:false, error:"cancelled" };
     ADMIN_PASS_CACHE = pass.trim();
-    if(!ADMIN_PASS_CACHE) return false;
+    if(!ADMIN_PASS_CACHE) return { ok:false, error:"empty_password" };
   }
 
   const res = await fetch(API_URL, {
@@ -58,33 +58,38 @@ async function saveToServer(data){
   });
 
   if(!res.ok){
-    // si falla, limpiamos cache para que vuelva a pedirla
+    // si falla, limpiar cache para volver a pedir
     ADMIN_PASS_CACHE = "";
     let detail = "";
     try { detail = await res.text(); } catch {}
-    alert("❌ Error guardando en GitHub.\n\n" + detail);
-    return false;
+    return { ok:false, error:"server_error", detail };
   }
 
-  return true;
+  return { ok:true };
 }
 
 // =======================
 // MAIN EXPORT
 // =======================
 export function adminActions(ctx){
-  const { getState, setState, render } = ctx;
+  const { getState, setState, render, markDirty } = ctx;
 
   function cloneState(){
     const s = getState();
     return { ...s, data: deepClone(s.data) };
   }
 
+  function changed(next){
+    setState(next);
+    markDirty?.(true);
+    render();
+  }
+
   return {
     // -----------------------
     // EQUIPOS
     // -----------------------
-    async addEquipo(){
+    addEquipo(){
       const nombre = prompt("Nombre del equipo:");
       if(!nombre) return;
 
@@ -103,20 +108,14 @@ export function adminActions(ctx){
 
       next.data.equipos.push(newEq);
 
-      // abrir el nodo del nuevo equipo en el árbol
       next.open = new Set(next.open || []);
       next.open.add(`eq:${newEq.id}`);
-
-      // seleccionar el nuevo equipo
       next.selected = { type:"equipo", equipoId: newEq.id };
 
-      setState(next);
-      render();
-
-      await saveToServer(next.data);
+      changed(next);
     },
 
-    async editEquipo(equipoId){
+    editEquipo(equipoId){
       const next = cloneState();
       const eq = (next.data.equipos || []).find(e=>e.id===equipoId);
       if(!eq) return;
@@ -130,35 +129,27 @@ export function adminActions(ctx){
       eq.nombre = nombre.trim();
       eq.stock_taller = stock;
 
-      setState(next);
-      render();
-
-      await saveToServer(next.data);
+      changed(next);
     },
 
-    async deleteEquipo(equipoId){
+    deleteEquipo(equipoId){
       if(!confirm("¿Eliminar este equipo?")) return;
 
       const next = cloneState();
       next.data.equipos = (next.data.equipos || []).filter(e=>e.id!==equipoId);
 
-      // limpiar selección si apuntaba a ese equipo
       if(next.selected?.equipoId === equipoId) next.selected = null;
 
-      // limpiar expansión
       next.open = new Set(next.open || []);
       next.open.delete(`eq:${equipoId}`);
 
-      setState(next);
-      render();
-
-      await saveToServer(next.data);
+      changed(next);
     },
 
     // -----------------------
     // SISTEMAS
     // -----------------------
-    async addSistema(equipoId){
+    addSistema(equipoId){
       const nombre = prompt("Nombre del sistema:");
       if(!nombre) return;
 
@@ -174,19 +165,15 @@ export function adminActions(ctx){
       };
       eq.sistemas.push(newSis);
 
-      // abrir el sistema y dejar seleccionado
       next.open = new Set(next.open || []);
       next.open.add(`eq:${equipoId}`);
       next.open.add(`sis:${equipoId}:${newSis.id}`);
       next.selected = { type:"sistema", equipoId, sistemaId: newSis.id };
 
-      setState(next);
-      render();
-
-      await saveToServer(next.data);
+      changed(next);
     },
 
-    async editSistema(equipoId, sistemaId){
+    editSistema(equipoId, sistemaId){
       const next = cloneState();
       const eq = (next.data.equipos || []).find(e=>e.id===equipoId);
       if(!eq) return;
@@ -198,14 +185,10 @@ export function adminActions(ctx){
       if(nombre === null) return;
 
       sis.nombre = nombre.trim();
-
-      setState(next);
-      render();
-
-      await saveToServer(next.data);
+      changed(next);
     },
 
-    async deleteSistema(equipoId, sistemaId){
+    deleteSistema(equipoId, sistemaId){
       if(!confirm("¿Eliminar este sistema?")) return;
 
       const next = cloneState();
@@ -214,25 +197,20 @@ export function adminActions(ctx){
 
       eq.sistemas = (eq.sistemas || []).filter(s=>s.id!==sistemaId);
 
-      // ajustar selección
       if(next.selected?.type==="sistema" && next.selected?.sistemaId===sistemaId){
         next.selected = { type:"equipo", equipoId };
       }
 
-      // limpiar expansión del sistema
       next.open = new Set(next.open || []);
       next.open.delete(`sis:${equipoId}:${sistemaId}`);
 
-      setState(next);
-      render();
-
-      await saveToServer(next.data);
+      changed(next);
     },
 
     // -----------------------
     // COMPONENTES
     // -----------------------
-    async addComponente(equipoId, sistemaId){
+    addComponente(equipoId, sistemaId){
       const codigo_sap = askSap("");
       if(codigo_sap === null) return;
 
@@ -257,18 +235,14 @@ export function adminActions(ctx){
         stock
       });
 
-      // asegurar que esté abierto el árbol
       next.open = new Set(next.open || []);
       next.open.add(`eq:${equipoId}`);
       next.open.add(`sis:${equipoId}:${sistemaId}`);
 
-      setState(next);
-      render();
-
-      await saveToServer(next.data);
+      changed(next);
     },
 
-    async editComponente(equipoId, sistemaId, compId){
+    editComponente(equipoId, sistemaId, compId){
       const next = cloneState();
       const eq = (next.data.equipos || []).find(e=>e.id===equipoId);
       if(!eq) return;
@@ -292,13 +266,10 @@ export function adminActions(ctx){
       comp.nombre = nombre.trim();
       comp.stock = stock;
 
-      setState(next);
-      render();
-
-      await saveToServer(next.data);
+      changed(next);
     },
 
-    async deleteComponente(equipoId, sistemaId, compId){
+    deleteComponente(equipoId, sistemaId, compId){
       if(!confirm("¿Eliminar este componente?")) return;
 
       const next = cloneState();
@@ -310,10 +281,7 @@ export function adminActions(ctx){
 
       sis.componentes = (sis.componentes || []).filter(c=>c.id!==compId);
 
-      setState(next);
-      render();
-
-      await saveToServer(next.data);
+      changed(next);
     }
   };
 }
