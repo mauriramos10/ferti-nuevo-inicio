@@ -1,16 +1,15 @@
-// =======================
-// CONFIG
-// =======================
+// Backend (Cloudflare Worker) - si no lo tienes listo, igual funciona en modo local (sin guardar)
 export const API_URL = "https://throbbing-mouse-337ferti-backend.mauriramos10.workers.dev";
 
-// cache de contraseña en esta sesión (no se guarda en disco)
+// Cache de contraseña del Worker (solo en esta sesión)
 let ADMIN_PASS_CACHE = "";
 
-// =======================
-// HELPERS
-// =======================
 function makeId(prefix="id"){
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+function deepClone(obj){
+  return JSON.parse(JSON.stringify(obj));
 }
 
 function askInt(msg, def=0){
@@ -35,14 +34,9 @@ function askSap(def=""){
   return s;
 }
 
-function deepClone(obj){
-  return JSON.parse(JSON.stringify(obj));
-}
-
 export async function saveNow(data){
-  // pide contraseña si no hay cache
   if(!ADMIN_PASS_CACHE){
-    const pass = prompt("Contraseña Admin (para guardar en GitHub):");
+    const pass = prompt("Contraseña Admin (ADMIN_PASSWORD) para guardar:");
     if(pass === null) return { ok:false, error:"cancelled" };
     ADMIN_PASS_CACHE = pass.trim();
     if(!ADMIN_PASS_CACHE) return { ok:false, error:"empty_password" };
@@ -50,15 +44,11 @@ export async function saveNow(data){
 
   const res = await fetch(API_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      admin_password: ADMIN_PASS_CACHE,
-      data
-    })
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify({ admin_password: ADMIN_PASS_CACHE, data })
   });
 
   if(!res.ok){
-    // si falla, limpiar cache para volver a pedir
     ADMIN_PASS_CACHE = "";
     let detail = "";
     try { detail = await res.text(); } catch {}
@@ -68,15 +58,12 @@ export async function saveNow(data){
   return { ok:true };
 }
 
-// =======================
-// MAIN EXPORT
-// =======================
 export function adminActions(ctx){
   const { getState, setState, render, markDirty } = ctx;
 
   function cloneState(){
     const s = getState();
-    return { ...s, data: deepClone(s.data) };
+    return { ...s, data: deepClone(s.data), open: new Set(s.open || []) };
   }
 
   function changed(next){
@@ -86,9 +73,7 @@ export function adminActions(ctx){
   }
 
   return {
-    // -----------------------
     // EQUIPOS
-    // -----------------------
     addEquipo(){
       const nombre = prompt("Nombre del equipo:");
       if(!nombre) return;
@@ -99,16 +84,9 @@ export function adminActions(ctx){
       const next = cloneState();
       next.data.equipos = next.data.equipos || [];
 
-      const newEq = {
-        id: makeId("eq"),
-        nombre: nombre.trim(),
-        stock_taller: stock,
-        sistemas: []
-      };
-
+      const newEq = { id: makeId("eq"), nombre: nombre.trim(), stock_taller: stock, sistemas: [] };
       next.data.equipos.push(newEq);
 
-      next.open = new Set(next.open || []);
       next.open.add(`eq:${newEq.id}`);
       next.selected = { type:"equipo", equipoId: newEq.id };
 
@@ -139,16 +117,12 @@ export function adminActions(ctx){
       next.data.equipos = (next.data.equipos || []).filter(e=>e.id!==equipoId);
 
       if(next.selected?.equipoId === equipoId) next.selected = null;
-
-      next.open = new Set(next.open || []);
       next.open.delete(`eq:${equipoId}`);
 
       changed(next);
     },
 
-    // -----------------------
     // SISTEMAS
-    // -----------------------
     addSistema(equipoId){
       const nombre = prompt("Nombre del sistema:");
       if(!nombre) return;
@@ -158,14 +132,9 @@ export function adminActions(ctx){
       if(!eq) return;
 
       eq.sistemas = eq.sistemas || [];
-      const newSis = {
-        id: makeId("sis"),
-        nombre: nombre.trim(),
-        componentes: []
-      };
+      const newSis = { id: makeId("sis"), nombre: nombre.trim(), componentes: [] };
       eq.sistemas.push(newSis);
 
-      next.open = new Set(next.open || []);
       next.open.add(`eq:${equipoId}`);
       next.open.add(`sis:${equipoId}:${newSis.id}`);
       next.selected = { type:"sistema", equipoId, sistemaId: newSis.id };
@@ -200,16 +169,12 @@ export function adminActions(ctx){
       if(next.selected?.type==="sistema" && next.selected?.sistemaId===sistemaId){
         next.selected = { type:"equipo", equipoId };
       }
-
-      next.open = new Set(next.open || []);
       next.open.delete(`sis:${equipoId}:${sistemaId}`);
 
       changed(next);
     },
 
-    // -----------------------
     // COMPONENTES
-    // -----------------------
     addComponente(equipoId, sistemaId){
       const codigo_sap = askSap("");
       if(codigo_sap === null) return;
@@ -228,14 +193,8 @@ export function adminActions(ctx){
       if(!sis) return;
 
       sis.componentes = sis.componentes || [];
-      sis.componentes.push({
-        id: makeId("comp"),
-        codigo_sap,
-        nombre: nombre.trim(),
-        stock
-      });
+      sis.componentes.push({ id: makeId("comp"), codigo_sap, nombre: nombre.trim(), stock });
 
-      next.open = new Set(next.open || []);
       next.open.add(`eq:${equipoId}`);
       next.open.add(`sis:${equipoId}:${sistemaId}`);
 
@@ -280,7 +239,6 @@ export function adminActions(ctx){
       if(!sis) return;
 
       sis.componentes = (sis.componentes || []).filter(c=>c.id!==compId);
-
       changed(next);
     }
   };
