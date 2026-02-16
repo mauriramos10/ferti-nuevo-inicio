@@ -1,14 +1,35 @@
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial, sans-serif;background:#f4f6f9;color:#1f2a37}
+.layout{display:flex;min-height:100vh}
 
-body { font-family: Arial, sans-serif; margin: 0; background:#f4f6fa; }
-.layout { display: flex; height: 100vh; }
-.sidebar { width: 280px; background: #1e293b; color: white; padding: 15px; }
-.brand { font-size: 20px; font-weight: bold; margin-bottom: 15px; }
-.menu-btn { width: 100%; margin-bottom: 5px; padding: 8px; border: none; background:#334155; color:white; cursor:pointer; }
-.tree { margin-top: 10px; }
-.node { padding: 5px; cursor:pointer; display:flex; gap:5px; }
-.node.selected { background:#334155; }
-.indent { margin-left: 15px; }
-.badge { margin-left:auto; font-size:12px; }
-.main { flex: 1; padding: 20px; }
-.topbar { display:flex; justify-content:space-between; align-items:center; }
-.admin-btn { padding:6px 12px; cursor:pointer; }
+.sidebar{
+  width:320px;background:#0f172a;color:#e5e7eb;
+  padding:16px;display:flex;flex-direction:column;gap:14px
+}
+.brand{font-weight:700;font-size:18px}
+.menu{display:flex;gap:8px;flex-wrap:wrap}
+.menu-btn{
+  padding:8px 10px;border:0;border-radius:10px;cursor:pointer;
+  background:#1f2937;color:#e5e7eb
+}
+.menu-btn.active{background:#2563eb}
+
+.tree-header{margin-top:6px;font-size:12px;color:#a7b0be;text-transform:uppercase}
+.tree{background:#111c34;border-radius:12px;padding:10px;overflow:auto;flex:1}
+
+.node{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:10px;cursor:pointer}
+.node:hover{background:rgba(255,255,255,.06)}
+.twisty{width:18px;text-align:center;opacity:.9}
+.badge{margin-left:auto;font-size:12px;background:rgba(255,255,255,.08);padding:2px 8px;border-radius:999px;color:#e5e7eb}
+.indent{margin-left:18px}
+
+.main{flex:1;display:flex;flex-direction:column}
+.topbar{
+  background:#fff;border-bottom:1px solid #e6ebf2;
+  padding:12px 16px;display:flex;align-items:center;justify-content:space-between
+}
+.breadcrumb{color:#334155;font-size:14px}
+.admin-btn{padding:9px 12px;border:0;border-radius:10px;cursor:pointer;background:#eef2f7;color:#111}
+
+.content{padding:18px}
+
